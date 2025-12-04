@@ -12,6 +12,8 @@ declare module "@mui/material/styles" {
 
       turquoise: string;
       turquoise_hover: string;
+
+      white: string;
     };
   }
   interface ThemeOptions {
@@ -23,6 +25,8 @@ declare module "@mui/material/styles" {
       navy_hover: string;
       red_hover: string;
       turquoise_hover: string;
+
+      white: string;
     };
   }
 }
@@ -34,7 +38,7 @@ export const staffanyTheme = createTheme({
     },
     secondary: {
       main: STAFFANY_COLORS.RED,
-      contrastText: "white",
+      contrastText: STAFFANY_COLORS.WHITE,
     },
     error: {
       main: STAFFANY_COLORS.RED,
@@ -51,5 +55,7 @@ export const staffanyTheme = createTheme({
     navy_hover: STAFFANY_COLORS.NAVY_HOVER,
     red_hover: STAFFANY_COLORS.RED_HOVER,
     turquoise_hover: STAFFANY_COLORS.TURQOISE_HOVER,
+
+    white: STAFFANY_COLORS.WHITE,
   },
 });

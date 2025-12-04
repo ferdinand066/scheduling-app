@@ -1,4 +1,6 @@
-export const ERROR_CODES = {
+const ERROR_CODES = {
   SHIFT_CLASH: 42201,
   START_TIME_AND_END_TIME_CANNOT_BE_THE_SAME: 42202,
 } as const;
+
+export default ERROR_CODES;

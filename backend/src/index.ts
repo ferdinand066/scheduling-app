@@ -1,15 +1,15 @@
 import { server as HapiServer, Request, ResponseToolkit } from "@hapi/hapi";
-import * as dotenv from "dotenv";
-import * as Qs from "qs";
 import * as Inert from "@hapi/inert";
 import * as Vision from "@hapi/vision";
-import * as HapiSwagger from "hapi-swagger";
+import * as dotenv from "dotenv";
 import * as Cors from "hapi-cors";
+import * as HapiSwagger from "hapi-swagger";
+import * as Qs from "qs";
 
 import { serverConfig } from "./config";
-import createRoutes from "./routes";
-import { dbConnection } from "./database/index";
 import swaggerOptions from "./config/swagger";
+import { initializeDatabase } from "./database/index";
+import createRoutes from "./routes";
 
 dotenv.config();
 
@@ -38,7 +38,7 @@ const init = async () => {
     }
   ]);
 
-  dbConnection.getConnection();
+  await initializeDatabase();
 
   createRoutes(server, serverConfig.BASE_REST_API_PATH);
 

@@ -8,6 +8,8 @@ import {
 } from "../../../shared/interfaces";
 import moduleLogger from "../../../shared/functions/logger";
 import { Between, MoreThanOrEqual, LessThanOrEqual } from "typeorm";
+import { HttpError } from "../../../shared/classes/HttpError";
+import { ERROR_CODES } from "../../../shared/constants/errorCode";
 
 const logger = moduleLogger("shiftController");
 
@@ -81,6 +83,10 @@ export const create = async (req: Request, h: ResponseToolkit) => {
   logger.info("Create shift");
   try {
     const body = req.payload as ICreateShift;
+    if (body.startTime === body.endTime) {
+      throw new HttpError(422, "Start time and end time cannot be the same", ERROR_CODES.START_TIME_AND_END_TIME_CANNOT_BE_THE_SAME, null);
+    }
+    
     const data = await shiftUsecase.create(body);
     const res: ISuccessResponse = {
       statusCode: 200,
@@ -99,6 +105,10 @@ export const updateById = async (req: Request, h: ResponseToolkit) => {
   try {
     const id = req.params.id;
     const body = req.payload as IUpdateShift;
+
+    if (body.startTime === body.endTime) {
+      throw new HttpError(422, "Start time and end time cannot be the same", ERROR_CODES.START_TIME_AND_END_TIME_CANNOT_BE_THE_SAME, null);
+    }
 
     const data = await shiftUsecase.updateById(id, body);
     const res: ISuccessResponse = {

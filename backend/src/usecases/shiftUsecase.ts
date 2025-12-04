@@ -28,9 +28,13 @@ export const updateById = async (
   id: string,
   payload: IUpdateShift
 ): Promise<Shift> => {
-  return shiftRepository.updateById(id, {
-    ...payload,
-  });
+  const shift = new Shift();
+  shift.name = payload.name;
+  shift.date = payload.date;
+  shift.startTime = payload.startTime;
+  shift.endTime = payload.endTime;
+
+  return shiftRepository.updateById(id, shift, payload.force);
 };
 
 export const deleteById = async (id: string | string[]) => {

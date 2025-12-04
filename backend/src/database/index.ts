@@ -1,37 +1,29 @@
 import 'reflect-metadata';
-import { Connection, createConnections } from 'typeorm';
+import { DataSource } from 'typeorm';
 import moduleLogger from '../shared/functions/logger';
 
 const logger = moduleLogger('database');
 
-export const dbConnection = (() => {
-  let connections: Connection[];
+export const AppDataSource = new DataSource({
+  name: "default",
+  type: "postgres",
+  host: process.env.DB_HOST || "localhost",
+  port: parseInt(process.env.DB_PORT || "5432"),
+  username: process.env.DB_USERNAME,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME || "hapi-boilerplate",
+  entities:
+    process.env.NODE_ENV === "production"
+      ? ["dist/src/database/default/entity/*.js"]
+      : ["src/database/default/entity/*.ts"],
+  synchronize: true,
+  logging: false,
+});
 
-  const createInstance = async (): Promise<Connection[]> => {
-    try {
-      return await createConnections();
-    } catch (e) {
-      console.log(e);
-      return Promise.reject(e);
-    }
-  };
-
-  return {
-    getConnection: async (connectionName = 'default'): Promise<Connection> => {
-      if (!connections) {
-        logger.info('Creating new database connection...');
-        connections = await createInstance();
-      }
-
-      const conn = connections.find(v => {
-        return v.name === connectionName;
-      });
-
-      if (!conn) {
-        throw new Error(`Connection ${connectionName} not found`);
-      }
-
-      return conn;
-    },
-  };
-})();
+export const initializeDatabase = async (): Promise<DataSource> => {
+  if (!AppDataSource.isInitialized) {
+    logger.info('Initializing database connection...');
+    await AppDataSource.initialize();
+  }
+  return AppDataSource;
+};

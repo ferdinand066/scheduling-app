@@ -12,13 +12,13 @@ export class HttpError extends Error {
 
   public code?: number;
 
-  public data?: any;
+  public results?: any;
 
-  constructor(status: number, message: string, code?: number, data?: any) {
+  constructor(status: number, message: string, code?: number, results?: any) {
     super(message);
     this.status = status;
     this.message = message;
     this.code = code;
-    this.data = data;
+    this.results = results;
   }
 }

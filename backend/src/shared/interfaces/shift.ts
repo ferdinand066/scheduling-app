@@ -11,5 +11,5 @@ export interface IUpdateShift {
   date?: string;
   startTime?: string;
   endTime?: string;
-  weekId? : string;
+  force?: boolean;
 }

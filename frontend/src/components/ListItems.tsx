@@ -1,4 +1,4 @@
-import { BusinessCenter } from "@mui/icons-material";
+import { Work } from "@mui/icons-material";
 import { ListItemButton } from "@mui/material";
 import ListItem from "@mui/material/ListItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
@@ -11,7 +11,7 @@ export const mainListItems = (
     <ListItem disablePadding>
       <ListItemButton component={RouterLink} to="/shift">
         <ListItemIcon>
-          <BusinessCenter />
+          <Work />
         </ListItemIcon>
         <ListItemText primary="Shifts" />
       </ListItemButton>

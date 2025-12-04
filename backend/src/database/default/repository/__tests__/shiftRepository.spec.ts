@@ -54,8 +54,7 @@ describe("shiftRepository => findById", () => {
     expect(getRepositorySpy).toHaveBeenNthCalledWith(1, Shift);
     expect(typeorm.getRepository(Shift).findOne).toHaveBeenNthCalledWith(
       1,
-      id,
-      undefined
+      { where: { id } }
     );
   });
 });
@@ -85,8 +84,7 @@ describe("shiftRepository => findOne", () => {
     expect(getRepositorySpy).toHaveBeenNthCalledWith(1, Shift);
     expect(typeorm.getRepository(Shift).findOne).toHaveBeenNthCalledWith(
       1,
-      { id },
-      undefined
+      { where: { id } }
     );
   });
 });
@@ -110,6 +108,7 @@ describe("shiftRepository => create", () => {
     const getRepositorySpy = jest
       .spyOn(typeorm, "getRepository")
       .mockReturnValue({
+        find: jest.fn().mockResolvedValue([]),
         save: jest.fn().mockResolvedValue(expectedResult),
       } as any);
 

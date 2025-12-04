@@ -9,20 +9,22 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Grid2 from "@mui/material/Grid2";
+import { useTheme } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import Joi from "joi";
 import React, { FunctionComponent, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useHistory, useLocation, useParams } from "react-router-dom";
-import { STAFFANY_COLORS } from "../commons/colors";
+import { STAFFANY_COLORS } from "../../commons/colors";
+import ERROR_CODES from "../../commons/errorCodes";
 import {
-  createShifts,
-  getShiftById,
-  updateShiftById,
-} from "../helper/api/shift";
-import { getErrorMessage } from "../helper/error";
-import { useTheme } from "@mui/material/styles";
+  useCreateShiftMutation,
+  useShiftByIdQuery,
+  useUpdateShiftMutation,
+} from "../../helper/api/hooks/useShiftQueries";
+import { getErrorMessage } from "../../helper/error";
+import { getCurrentHourStart, getNextHourStart } from "./functions/helper";
+import { IFormInput, shiftSchema } from "./schema/shiftSchema";
 
 interface ClashingShift {
   name: string;
@@ -33,39 +35,12 @@ interface ClashingShift {
 
 interface ShiftClashWarning {
   message: string;
-  data: ClashingShift[];
+  results: ClashingShift[];
 }
-
-interface IFormInput {
-  name: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-}
-
-const shiftSchema = Joi.object({
-  name: Joi.string().required(),
-  date: Joi.string().required(),
-  startTime: Joi.string().required(),
-  endTime: Joi.string().required(),
-});
 
 interface RouteParams {
   id: string;
 }
-
-// Helper to get current hour formatted as HH:00
-const getCurrentHourStart = (): string => {
-  const now = new Date();
-  return String(now.getHours()).padStart(2, "0") + ":00";
-};
-
-// Helper to get next hour formatted as HH:00
-const getNextHourStart = (): string => {
-  const now = new Date();
-  const nextHour = (now.getHours() + 1) % 24;
-  return String(nextHour).padStart(2, "0") + ":00";
-};
 
 const ShiftForm: FunctionComponent = () => {
   const theme = useTheme();
@@ -74,11 +49,9 @@ const ShiftForm: FunctionComponent = () => {
   const { id } = useParams<RouteParams>();
   const isEdit = id !== undefined;
 
-  // Parse default date from URL query params
   const searchParams = new URLSearchParams(location.search);
   const defaultDateParam = searchParams.get("defaultDate");
 
-  // Calculate default values for new shifts
   const defaultValues = useMemo(() => {
     if (isEdit) {
       return {
@@ -97,48 +70,53 @@ const ShiftForm: FunctionComponent = () => {
   }, [isEdit, defaultDateParam]);
 
   const [error, setError] = useState("");
-  const [shiftClashWarning, setShiftClashWarning] = useState<ShiftClashWarning | null>(null);
+  const [shiftClashWarning, setShiftClashWarning] =
+    useState<ShiftClashWarning | null>(null);
   const [pendingData, setPendingData] = useState<IFormInput | null>(null);
+
+  const { data: shiftData, error: shiftError } = useShiftByIdQuery(
+    isEdit ? id : undefined
+  );
+  const createShiftMutation = useCreateShiftMutation();
+  const updateShiftMutation = useUpdateShiftMutation();
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-    setValue,
+    reset,
+    watch,
   } = useForm<IFormInput>({
     resolver: joiResolver(shiftSchema),
     defaultValues,
   });
 
+  const nameValue = watch("name");
+
   useEffect(() => {
-    const getData = async () => {
-      try {
-        if (!isEdit) {
-          return;
-        }
+    if (isEdit && shiftData?.results) {
+      reset({
+        name: shiftData.results.name,
+        date: shiftData.results.date,
+        startTime: shiftData.results.startTime,
+        endTime: shiftData.results.endTime,
+      });
+    }
+  }, [isEdit, shiftData, reset]);
 
-        const { result } = await getShiftById(id);
-
-        setValue("name", result.name);
-        setValue("date", result.date);
-        setValue("startTime", result.startTime);
-        setValue("endTime", result.endTime);
-      } catch (error) {
-        const message = getErrorMessage(error);
-        setError(message);
-      }
-    };
-
-    getData();
-  }, [isEdit, id, setValue]);
+  useEffect(() => {
+    if (shiftError) {
+      setError(getErrorMessage(shiftError));
+    }
+  }, [shiftError]);
 
   const submitShift = async (data: IFormInput, force: boolean = false) => {
     const payload = force ? { ...data, force: true } : data;
-    
+
     if (isEdit) {
-      await updateShiftById(id, payload);
+      await updateShiftMutation.mutateAsync({ id, payload });
     } else {
-      await createShifts(payload);
+      await createShiftMutation.mutateAsync(payload);
     }
   };
 
@@ -149,14 +127,12 @@ const ShiftForm: FunctionComponent = () => {
 
       await submitShift(data);
 
-      // Navigate back - preserve the week context if coming from shift page
       history.goBack();
     } catch (error: any) {
-      // Check for shift clash error (code 42201)
-      if (error.response?.data?.code === 42201) {
+      if (error.response?.data?.code === ERROR_CODES.SHIFT_CLASH) {
         setShiftClashWarning({
           message: error.response.data.message,
-          data: error.response.data.data || [],
+          results: error.response.data.results || [],
         });
         setPendingData(data);
       } else {
@@ -179,6 +155,7 @@ const ShiftForm: FunctionComponent = () => {
       await submitShift(pendingData, true);
       setShiftClashWarning(null);
       setPendingData(null);
+
       history.goBack();
     } catch (error: any) {
       setShiftClashWarning(null);
@@ -187,6 +164,9 @@ const ShiftForm: FunctionComponent = () => {
       setError(message);
     }
   };
+
+  const isSubmitting =
+    createShiftMutation.isPending || updateShiftMutation.isPending;
 
   return (
     <Grid2 container spacing={3}>
@@ -199,8 +179,8 @@ const ShiftForm: FunctionComponent = () => {
                 variant="contained"
                 onClick={() => history.goBack()}
                 sx={{
-                  backgroundColor: STAFFANY_COLORS.RED,
-                  color: STAFFANY_COLORS.WHITE,
+                  backgroundColor: theme.customColors.red,
+                  color: theme.customColors.white,
                   "&:hover": {
                     backgroundColor: theme.customColors.red_hover,
                   },
@@ -212,24 +192,27 @@ const ShiftForm: FunctionComponent = () => {
               </Button>
             </Box>
 
-            {error.length > 0 ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : <></>}
-            
+            {error.length > 0 && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
+
             <form onSubmit={handleSubmit(onSubmit)}>
               <Grid2 container spacing={3}>
-                {/* Shift Name - Full Width */}
                 <Grid2 size={12}>
                   <TextField
                     fullWidth
                     label="Shift Name *"
                     slotProps={{
                       htmlInput: { ...register("name") },
+                      inputLabel: { shrink: nameValue ? true : undefined },
                     }}
                     error={!!errors.name}
                     helperText={errors.name?.message}
                   />
                 </Grid2>
 
-                {/* Event date, Start Time, End Time - Same Row */}
                 <Grid2 size={{ xs: 12, md: 4 }}>
                   <TextField
                     fullWidth
@@ -270,12 +253,12 @@ const ShiftForm: FunctionComponent = () => {
                   />
                 </Grid2>
 
-                {/* Save Button - Right Aligned */}
                 <Grid2 size={12}>
                   <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
                     <Button
                       type="submit"
                       variant="contained"
+                      disabled={isSubmitting}
                       sx={{
                         backgroundColor: theme.customColors.turquoise,
                         color: "#fff",
@@ -287,7 +270,7 @@ const ShiftForm: FunctionComponent = () => {
                         px: 4,
                       }}
                     >
-                      Save
+                      {isSubmitting ? "Saving..." : "Save"}
                     </Button>
                   </Box>
                 </Grid2>
@@ -297,7 +280,6 @@ const ShiftForm: FunctionComponent = () => {
         </Card>
       </Grid2>
 
-      {/* Shift Clash Warning Dialog */}
       <Dialog
         open={shiftClashWarning !== null}
         onClose={handleClashWarningClose}
@@ -310,19 +292,21 @@ const ShiftForm: FunctionComponent = () => {
           <Typography variant="body2" sx={{ mb: 1 }} color="text.secondary">
             This shift clashes with the following shift:
           </Typography>
-          {shiftClashWarning?.data.filter((_, index) => index === 0).map((shift, index) => (
-            <Box key={index} sx={{ mb: 2 }}>
-              <Typography variant="body2" fontWeight="bold">
-                {shift.name}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Date: {shift.date}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Time: {shift.startTime} - {shift.endTime}
-              </Typography>
-            </Box>
-          ))}
+          {shiftClashWarning?.results
+            .filter((_, index) => index === 0)
+            .map((shift, index) => (
+              <Box key={index} sx={{ mb: 2 }}>
+                <Typography variant="body2" fontWeight="bold">
+                  {shift.name}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Date: {shift.date}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Time: {shift.startTime} - {shift.endTime}
+                </Typography>
+              </Box>
+            ))}
           <Typography variant="body2" sx={{ mt: 2 }} color="text.secondary">
             Do you want to proceed anyway?
           </Typography>
@@ -331,7 +315,11 @@ const ShiftForm: FunctionComponent = () => {
           <Button onClick={handleClashWarningClose} color="primary">
             Cancel
           </Button>
-          <Button onClick={handleForceSubmit} color="primary">
+          <Button
+            onClick={handleForceSubmit}
+            color="primary"
+            disabled={isSubmitting}
+          >
             Ignore
           </Button>
         </DialogActions>
