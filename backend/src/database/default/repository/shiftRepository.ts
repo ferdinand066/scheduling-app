@@ -10,6 +10,7 @@ import moduleLogger from "../../../shared/functions/logger";
 import Shift from "../entity/shift";
 import { getOverlappingShifts } from "./service/shiftService";
 import { HttpError } from "../../../shared/classes/HttpError";
+import { ERROR_CODES } from "../../../shared/constants/errorCode";
 
 const logger = moduleLogger("shiftRepository");
 
@@ -54,7 +55,7 @@ export const create = async (payload: Shift, force: boolean = false): Promise<Sh
     const overlappingShifts = await getOverlappingShifts(payload);
 
     if (overlappingShifts.length > 0) {
-      throw new HttpError(422, "Shift Clash Warning", overlappingShifts);
+      throw new HttpError(422, "Shift Clash Warning", ERROR_CODES.SHIFT_CLASH, overlappingShifts);
     }
   }
 
