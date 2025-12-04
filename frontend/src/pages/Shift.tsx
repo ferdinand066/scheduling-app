@@ -295,9 +295,10 @@ const Shift: FunctionComponent = () => {
                     backgroundColor: theme.customColors.turquoise,
                     color: "white",
                     "&:hover": {
-                      backgroundColor: "#3fc9bd",
+                      backgroundColor: theme.customColors.turquoise_hover,
                     },
                   }}
+                  disabled={rows.length === 0}
                 >
                   PUBLISH
                 </Button>

@@ -4,10 +4,11 @@ import { ResponseToolkit } from '@hapi/hapi';
 
 export const errorHandler = (h: ResponseToolkit, err: any) => {
   if (err instanceof HttpError) {
-    const response: IErrorResponse & { data?: any } = {
+    const response: IErrorResponse & { code?: number, data?: any } = {
       error: err.name,
       statusCode: err.status,
-      message: err.message
+      message: err.message,
+      code: err.code
     };
     if (err.data !== undefined) {
       response.data = err.data;
