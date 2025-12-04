@@ -1,19 +1,19 @@
-import React from "react";
+import { BusinessCenter } from "@mui/icons-material";
+import { ListItemButton } from "@mui/material";
 import ListItem from "@mui/material/ListItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
-import LayersIcon from "@mui/icons-material/Layers";
+import React from "react";
 import { Link as RouterLink } from "react-router-dom";
-import { ListItemButton } from "@mui/material";
 
 export const mainListItems = (
   <div>
     <ListItem disablePadding>
       <ListItemButton component={RouterLink} to="/shift">
         <ListItemIcon>
-          <LayersIcon />
+          <BusinessCenter />
         </ListItemIcon>
-        <ListItemText primary="Shift" />
+        <ListItemText primary="Shifts" />
       </ListItemButton>
     </ListItem>
   </div>
