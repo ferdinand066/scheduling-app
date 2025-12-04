@@ -1,21 +1,22 @@
-import React, { FunctionComponent, useState, useMemo } from "react";
-import Grid from "@mui/material/Grid";
+import { joiResolver } from "@hookform/resolvers/joi";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
+import Grid2 from "@mui/material/Grid2";
+import TextField from "@mui/material/TextField";
+import Joi from "joi";
+import React, { FunctionComponent, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
-import { joiResolver } from "@hookform/resolvers/joi";
-import { getErrorMessage } from "../helper/error";
+import { useHistory, useLocation, useParams } from "react-router-dom";
+import { STAFFANY_COLORS } from "../commons/colors";
 import {
   createShifts,
   getShiftById,
   updateShiftById,
 } from "../helper/api/shift";
-import { useHistory, useParams, useLocation } from "react-router-dom";
-import Alert from "@mui/material/Alert";
-import TextField from "@mui/material/TextField";
-import Button from "@mui/material/Button";
-import { useEffect } from "react";
-import Joi from "joi";
+import { getErrorMessage } from "../helper/error";
 
 interface IFormInput {
   name: string;
@@ -129,72 +130,114 @@ const ShiftForm: FunctionComponent = () => {
   };
 
   return (
-    <Grid container spacing={3}>
-      <Grid item xs={12}>
+    <Grid2 container spacing={3}>
+      <Grid2 size={12}>
         <Card>
           <CardContent>
-            {error.length > 0 ? <Alert severity="error">{error}</Alert> : <></>}
+            {/* Back Button */}
+            <Box sx={{ mb: 3 }}>
+              <Button
+                variant="contained"
+                onClick={() => history.goBack()}
+                sx={{
+                  backgroundColor: STAFFANY_COLORS.RED,
+                  color: STAFFANY_COLORS.WHITE,
+                  "&:hover": {
+                    backgroundColor: STAFFANY_COLORS.RED_HOVER,
+                  },
+                  textTransform: "uppercase",
+                  fontWeight: 600,
+                }}
+              >
+                Back
+              </Button>
+            </Box>
+
+            {error.length > 0 ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : <></>}
+            
             <form onSubmit={handleSubmit(onSubmit)}>
-              <Grid container spacing={3}>
-                <Grid item xs={12}>
+              <Grid2 container spacing={3}>
+                {/* Shift Name - Full Width */}
+                <Grid2 size={12}>
                   <TextField
                     fullWidth
-                    label="Name"
-                    inputProps={{ ...register("name") }}
+                    label="Shift Name *"
+                    slotProps={{
+                      htmlInput: { ...register("name") },
+                    }}
                     error={!!errors.name}
                     helperText={errors.name?.message}
                   />
-                </Grid>
-                <Grid item xs={12}>
+                </Grid2>
+
+                {/* Event date, Start Time, End Time - Same Row */}
+                <Grid2 size={{ xs: 12, md: 4 }}>
                   <TextField
                     fullWidth
-                    label="Date"
+                    label="Event date"
                     type="date"
-                    inputProps={{ ...register("date") }}
+                    slotProps={{
+                      htmlInput: { ...register("date") },
+                      inputLabel: { shrink: true },
+                    }}
                     error={!!errors.date}
                     helperText={errors.date?.message}
-                    InputLabelProps={{
-                      shrink: true,
-                    }}
                   />
-                </Grid>
-                <Grid item xs={12}>
+                </Grid2>
+                <Grid2 size={{ xs: 12, md: 4 }}>
                   <TextField
                     fullWidth
                     label="Start Time"
                     type="time"
-                    inputProps={{ ...register("startTime") }}
+                    slotProps={{
+                      htmlInput: { ...register("startTime") },
+                      inputLabel: { shrink: true },
+                    }}
                     error={!!errors.startTime}
                     helperText={errors.startTime?.message}
-                    InputLabelProps={{
-                      shrink: true,
-                    }}
                   />
-                </Grid>
-                <Grid item xs={12}>
+                </Grid2>
+                <Grid2 size={{ xs: 12, md: 4 }}>
                   <TextField
                     fullWidth
                     label="End Time"
                     type="time"
-                    inputProps={{ ...register("endTime") }}
+                    slotProps={{
+                      htmlInput: { ...register("endTime") },
+                      inputLabel: { shrink: true },
+                    }}
                     error={!!errors.endTime}
                     helperText={errors.endTime?.message}
-                    InputLabelProps={{
-                      shrink: true,
-                    }}
                   />
-                </Grid>
-                <Grid item xs={12}>
-                  <Button type="submit" variant="contained" color="primary">
-                    Submit
-                  </Button>
-                </Grid>
-              </Grid>
+                </Grid2>
+
+                {/* Save Button - Right Aligned */}
+                <Grid2 size={12}>
+                  <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      sx={{
+                        backgroundColor: STAFFANY_COLORS.TURQOISE,
+                        color: "#fff",
+                        "&:hover": {
+                          backgroundColor: STAFFANY_COLORS.TURQOISE_HOVER,
+                        },
+                        textTransform: "uppercase",
+                        fontWeight: 600,
+                        px: 4,
+                      }}
+                    >
+                      Save
+                    </Button>
+                  </Box>
+                </Grid2>
+              </Grid2>
             </form>
           </CardContent>
         </Card>
-      </Grid>
-    </Grid>
+      </Grid2>
+    </Grid2>
   );
 };
 

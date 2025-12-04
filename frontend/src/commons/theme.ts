@@ -1,5 +1,5 @@
 import { createTheme } from "@mui/material/styles";
-import { STAFFANY_NAVY, STAFFANY_RED, STAFFANY_TURQOISE } from "./colors";
+import { STAFFANY_COLORS } from "./colors";
 
 declare module "@mui/material/styles" {
   interface Theme {
@@ -21,22 +21,22 @@ declare module "@mui/material/styles" {
 export const staffanyTheme = createTheme({
   palette: {
     primary: {
-      main: STAFFANY_NAVY,
+      main: STAFFANY_COLORS.NAVY,
     },
     secondary: {
-      main: STAFFANY_RED,
+      main: STAFFANY_COLORS.RED,
       contrastText: "white",
     },
     error: {
-      main: STAFFANY_RED,
+      main: STAFFANY_COLORS.RED,
     },
     success: {
-      main: STAFFANY_TURQOISE,
+      main: STAFFANY_COLORS.TURQOISE,
     },
   },
   customColors: {
-    navy: STAFFANY_NAVY,
-    red: STAFFANY_RED,
-    turquoise: STAFFANY_TURQOISE,
+    navy: STAFFANY_COLORS.NAVY,
+    red: STAFFANY_COLORS.RED,
+    turquoise: STAFFANY_COLORS.TURQOISE,
   },
 });
