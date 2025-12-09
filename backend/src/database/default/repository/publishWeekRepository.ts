@@ -2,6 +2,7 @@
 import moduleLogger from "../../../shared/functions/logger";
 import PublishWeek from "../entity/publishWeek";
 import { AppDataSource } from "../..";
+import { LessThanOrEqual, MoreThanOrEqual } from "typeorm";
 
 const logger = moduleLogger("publishWeekRepository");
 
@@ -22,5 +23,15 @@ export const create = async (payload: PublishWeek): Promise<PublishWeek> => {
   const repository = AppDataSource.getRepository(PublishWeek);
   const newData = await repository.save(payload);
   return newData;
+};
+
+export const findClosestPublishWeek = async (date: string): Promise<PublishWeek | null> => {
+  logger.info("Find closest publish week");
+  const repository = AppDataSource.getRepository(PublishWeek);
+  const data = await repository.findOne({
+    where: { startDate: LessThanOrEqual(date), endDate: MoreThanOrEqual(date) },
+  });
+  
+  return data || null;
 };
 

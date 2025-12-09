@@ -1,13 +1,13 @@
-import * as typeorm from "typeorm";
 import * as shiftRepository from "../shiftRepository";
 import Shift from "../../entity/shift";
+import { AppDataSource } from "../../..";
 
-jest.mock("typeorm", () => {
-  return {
-    __esModule: true,
-    ...(jest.requireActual("typeorm") as typeof typeorm),
-  };
-});
+// Mock the database module
+jest.mock("../../..", () => ({
+  AppDataSource: {
+    getRepository: jest.fn(),
+  },
+}));
 
 describe("shiftRepository => find", () => {
   it("find => passed", async () => {
@@ -17,17 +17,16 @@ describe("shiftRepository => find", () => {
     expectedData.startTime = "00:00:00";
     expectedData.endTime = "04:00:00";
 
-    const getRepositorySpy = jest
-      .spyOn(typeorm, "getRepository")
-      .mockReturnValue({
-        find: jest.fn().mockResolvedValue([expectedData]),
-      } as any);
+    const mockFind = jest.fn().mockResolvedValue([expectedData]);
+    (AppDataSource.getRepository as jest.Mock).mockReturnValue({
+      find: mockFind,
+    });
 
     const result = await shiftRepository.find();
 
     expect(result).toEqual([expectedData]);
-    expect(getRepositorySpy).toHaveBeenNthCalledWith(1, Shift);
-    expect(typeorm.getRepository(Shift).find).toHaveBeenCalledTimes(1);
+    expect(AppDataSource.getRepository).toHaveBeenCalledWith(Shift);
+    expect(mockFind).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -42,20 +41,16 @@ describe("shiftRepository => findById", () => {
     expectedData.startTime = "00:00:00";
     expectedData.endTime = "04:00:00";
 
-    const getRepositorySpy = jest
-      .spyOn(typeorm, "getRepository")
-      .mockReturnValue({
-        findOne: jest.fn().mockResolvedValue(expectedData),
-      } as any);
+    const mockFindOne = jest.fn().mockResolvedValue(expectedData);
+    (AppDataSource.getRepository as jest.Mock).mockReturnValue({
+      findOne: mockFindOne,
+    });
 
     const result = await shiftRepository.findById(id);
 
     expect(result).toEqual(expectedData);
-    expect(getRepositorySpy).toHaveBeenNthCalledWith(1, Shift);
-    expect(typeorm.getRepository(Shift).findOne).toHaveBeenNthCalledWith(
-      1,
-      { where: { id } }
-    );
+    expect(AppDataSource.getRepository).toHaveBeenCalledWith(Shift);
+    expect(mockFindOne).toHaveBeenCalledWith({ where: { id } });
   });
 });
 
@@ -70,22 +65,18 @@ describe("shiftRepository => findOne", () => {
     expectedData.startTime = "00:00:00";
     expectedData.endTime = "04:00:00";
 
-    const getRepositorySpy = jest
-      .spyOn(typeorm, "getRepository")
-      .mockReturnValue({
-        findOne: jest.fn().mockResolvedValue(expectedData),
-      } as any);
+    const mockFindOne = jest.fn().mockResolvedValue(expectedData);
+    (AppDataSource.getRepository as jest.Mock).mockReturnValue({
+      findOne: mockFindOne,
+    });
 
     const result = await shiftRepository.findOne({
       id: id,
     });
 
     expect(result).toEqual(expectedData);
-    expect(getRepositorySpy).toHaveBeenNthCalledWith(1, Shift);
-    expect(typeorm.getRepository(Shift).findOne).toHaveBeenNthCalledWith(
-      1,
-      { where: { id } }
-    );
+    expect(AppDataSource.getRepository).toHaveBeenCalledWith(Shift);
+    expect(mockFindOne).toHaveBeenCalledWith({ where: { id } });
   });
 });
 
@@ -105,20 +96,16 @@ describe("shiftRepository => create", () => {
       endTime: "04:00:00",
     };
 
-    const getRepositorySpy = jest
-      .spyOn(typeorm, "getRepository")
-      .mockReturnValue({
-        find: jest.fn().mockResolvedValue([]),
-        save: jest.fn().mockResolvedValue(expectedResult),
-      } as any);
+    const mockSave = jest.fn().mockResolvedValue(expectedResult);
+    (AppDataSource.getRepository as jest.Mock).mockReturnValue({
+      find: jest.fn().mockResolvedValue([]),
+      save: mockSave,
+    });
 
     const result = await shiftRepository.create(payload);
 
     expect(result).toEqual(expectedResult);
-    expect(getRepositorySpy).toHaveBeenNthCalledWith(1, Shift);
-    expect(typeorm.getRepository(Shift).save).toHaveBeenNthCalledWith(
-      1,
-      payload
-    );
+    expect(AppDataSource.getRepository).toHaveBeenCalledWith(Shift);
+    expect(mockSave).toHaveBeenCalledWith(payload);
   });
 });

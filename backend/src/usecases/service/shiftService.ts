@@ -1,6 +1,6 @@
 import { In } from "typeorm";
-import Shift from "../../entity/shift";
-import { AppDataSource } from "../../..";
+import Shift from "../../database/default/entity/shift";
+import { AppDataSource } from "../../database";
 
 /**
  * Checks if a shift crosses midnight (endTime < startTime)
@@ -127,4 +127,70 @@ export const getOverlappingShifts = async (data: Shift): Promise<Shift[]> => {
   });
 
   return overlappingShifts;
+};
+
+
+/**
+ * Checks for overlapping shifts purely at the database level.
+ * Returns the first overlapping shift if found, null otherwise.
+ * 
+ * Uses PostgreSQL datetime arithmetic to calculate actual time ranges
+ * and checks overlap directly in SQL for better performance.
+ */
+export const checkOverlapping = async (data: Shift): Promise<Shift | null> => {
+  const repository = AppDataSource.getRepository(Shift);
+  const newCrossesMidnight = crossesMidnight(data.startTime, data.endTime);
+  
+  // Determine which dates to check for potential overlaps
+  const datesToCheck = [data.date, getPreviousDate(data.date)];
+  if (newCrossesMidnight) {
+    datesToCheck.push(getNextDate(data.date));
+  }
+
+  // Build query that calculates datetime ranges and checks overlap in SQL
+  const queryBuilder = repository.createQueryBuilder("shift")
+    .where("shift.date IN (:...dates)", { dates: datesToCheck });
+
+  // Exclude current shift if updating
+  if (data.id) {
+    queryBuilder.andWhere("shift.id != :id", { id: data.id });
+  }
+
+  // Calculate actual datetime ranges in SQL and check for overlap
+  // new_start < existing_end AND existing_start < new_end
+  queryBuilder.andWhere(`
+    (
+      -- Calculate new shift's actual start datetime
+      (:newDate::date + :newStartTime::time)
+      <
+      -- Calculate existing shift's actual end datetime (handles midnight crossing)
+      CASE 
+        WHEN shift."endTime" < shift."startTime" 
+        THEN (shift.date + INTERVAL '1 day' + shift."endTime")
+        ELSE (shift.date + shift."endTime")
+      END
+    )
+    AND
+    (
+      -- Calculate existing shift's actual start datetime
+      (shift.date + shift."startTime")
+      <
+      -- Calculate new shift's actual end datetime (handles midnight crossing)
+      CASE 
+        WHEN :newEndTime::time < :newStartTime::time 
+        THEN (:newDate::date + INTERVAL '1 day' + :newEndTime::time)
+        ELSE (:newDate::date + :newEndTime::time)
+      END
+    )
+  `, {
+    newDate: data.date,
+    newStartTime: data.startTime,
+    newEndTime: data.endTime,
+  });
+
+  // Return only the first overlapping shift (limit 1 for performance)
+  queryBuilder.limit(1);
+
+  const result = await queryBuilder.getOne();
+  return result ?? null;
 };

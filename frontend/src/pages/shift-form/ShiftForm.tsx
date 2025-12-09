@@ -23,6 +23,7 @@ import {
   useUpdateShiftMutation,
 } from "../../helper/api/hooks/useShiftQueries";
 import { getErrorMessage } from "../../helper/error";
+import { formatDateForApi, getStartOfWeek } from "../shift/functions/helper";
 import { getCurrentHourStart, getNextHourStart } from "./functions/helper";
 import { IFormInput, shiftSchema } from "./schema/shiftSchema";
 
@@ -120,6 +121,13 @@ const ShiftForm: FunctionComponent = () => {
     }
   };
 
+  const navigateBackWithWeek = (date: string) => {
+    const selectedDate = new Date(date);
+    const weekStart = getStartOfWeek(selectedDate);
+    const weekParam = formatDateForApi(weekStart);
+    history.push(`/shift?week=${weekParam}`);
+  };
+
   const onSubmit = async (data: IFormInput) => {
     try {
       setError("");
@@ -127,7 +135,7 @@ const ShiftForm: FunctionComponent = () => {
 
       await submitShift(data);
 
-      history.goBack();
+      navigateBackWithWeek(data.date);
     } catch (error: any) {
       if (error.response?.data?.code === ERROR_CODES.SHIFT_CLASH) {
         setShiftClashWarning({
@@ -156,7 +164,7 @@ const ShiftForm: FunctionComponent = () => {
       setShiftClashWarning(null);
       setPendingData(null);
 
-      history.goBack();
+      navigateBackWithWeek(pendingData.date);
     } catch (error: any) {
       setShiftClashWarning(null);
       setPendingData(null);
